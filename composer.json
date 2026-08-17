@@ -17,9 +17,18 @@
     "doctrine/orm": "^2.14 || ^3.0",
     "symfony/console": "^6.0 || ^7.0 || ^8.0"
   },
+  "require-dev": {
+    "codeception/codeception": "^5.0",
+    "codeception/module-asserts": "^3.0"
+  },
   "autoload": {
     "psr-4": {
       "ADT\\DoctrineAnonymization\\": "src/"
     }
+  },
+  "autoload-dev": {
+    "classmap": [
+      "tests/"
+    ]
   }
 }
