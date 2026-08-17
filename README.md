@@ -162,3 +162,16 @@ carry a masked direct identifier, for consumers that need to redact identifiers 
 free-form output. Column names readable anywhere else are excluded, so redaction
 cannot strip legitimate values (e.g. a masked client `NAME` vs. a readable branch
 `NAME`).
+
+## Tests
+
+```bash
+composer install
+vendor/bin/codecept run unit
+```
+
+The suite covers the metadata driven parts (policy, masking expressions, schema
+descriptions, which columns end up masked) and needs no database - the entity
+manager is built over the fixtures in `tests/unit/Fixtures` and only reads mapping
+metadata. Generating the views themselves requires MySQL and belongs to an
+integration test in the consuming project.
