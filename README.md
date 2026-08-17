@@ -175,3 +175,29 @@ descriptions, which columns end up masked) and needs no database - the entity
 manager is built over the fixtures in `tests/unit/Fixtures` and only reads mapping
 metadata. Generating the views themselves requires MySQL and belongs to an
 integration test in the consuming project.
+
+## Querying the anonymized schema
+
+`ReadOnlyQueryExecutor` connects with the dedicated read-only account and runs
+validated read-only queries, which is what you want whenever an untrusted or
+semi-trusted consumer writes the SQL - ad-hoc reporting, a BI tool, or an LLM:
+
+```neon
+services:
+	- ADT\DoctrineAnonymization\ReadOnlyConnectionOptions::fromArray(%reporting%)
+	- ADT\DoctrineAnonymization\ReadOnlyQueryExecutor
+```
+
+```php
+$executor->execute('SELECT city, COUNT(*) FROM person GROUP BY city');  // capped at maxRows
+$executor->streamQuery($sql, $onRow);        // for exports, no interactive row limit
+$executor->getTables();                      // views available in the schema
+$executor->getTableColumns('person');        // columns incl. DESCRIPTION
+```
+
+Rejected queries throw `QueryNotAllowedException`, database failures
+`QueryFailedException`. Only `SELECT`/`WITH`/`SHOW`/`DESCRIBE`/`EXPLAIN` pass, no
+multi-statement, and a qualified reference to the source database is refused.
+
+**This validation is a second line of defence, not the boundary.** The boundary is
+the grant of the read-only account - keep it to `SELECT` on the anonymized schema.
