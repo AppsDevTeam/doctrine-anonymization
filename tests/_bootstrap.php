@@ -10,3 +10,5 @@ foreach ([__DIR__ . '/../vendor/autoload.php', __DIR__ . '/../../../autoload.php
 		break;
 	}
 }
+
+require __DIR__ . "/_shim.php";
