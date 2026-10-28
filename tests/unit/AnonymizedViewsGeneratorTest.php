@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use ADT\DoctrineAnonymization\AnonymizationPolicy;
 use ADT\DoctrineAnonymization\AnonymizationType;
 use ADT\DoctrineAnonymization\AnonymizedViewsGenerator;
+use ADT\DoctrineAnonymization\Tests\Fixtures\Team;
 
 /**
  * Covers the metadata part of the generator - which columns end up masked.
@@ -51,5 +53,14 @@ class AnonymizedViewsGeneratorTest extends BaseTest
 
 		$this->assertArrayHasKey('person', $map);
 		$this->assertArrayHasKey('team', $map);
+	}
+
+	/** No entry means no view - an existing one is dropped as stale. */
+	public function testExcludedEntityHasNoView(): void
+	{
+		$map = (new AnonymizedViewsGenerator($this->em(), new AnonymizationPolicy([Team::class])))->buildTableMap();
+
+		$this->assertArrayHasKey('person', $map);
+		$this->assertArrayNotHasKey('team', $map);
 	}
 }

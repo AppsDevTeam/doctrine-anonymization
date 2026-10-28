@@ -50,6 +50,10 @@ class PersonalDataColumns
 			}
 
 			$class = $metadata->getReflectionClass()->getName();
+			// Not in the anonymized schema, so its columns never reach the output.
+			if ($this->policy->isExcluded($class)) {
+				continue;
+			}
 
 			foreach ($metadata->getFieldNames() as $fieldName) {
 				if (str_contains($fieldName, '.')) {

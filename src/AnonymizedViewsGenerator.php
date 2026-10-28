@@ -205,9 +205,14 @@ class AnonymizedViewsGenerator
 				continue;
 			}
 
+			$class = $metadata->getReflectionClass()->getName();
+			// No view at all - an existing one is dropped as stale.
+			if ($this->policy->isExcluded($class)) {
+				continue;
+			}
+
 			$table = $metadata->getTableName();
 			$tables[$table] ??= [];
-			$class = $metadata->getReflectionClass()->getName();
 
 			foreach ($metadata->getFieldNames() as $fieldName) {
 				// Embedded fields ("address.street") are not supported yet.

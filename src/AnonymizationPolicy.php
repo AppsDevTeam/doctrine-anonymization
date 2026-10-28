@@ -20,11 +20,26 @@ use ReflectionClass;
  *
  * Types returning true from {@see AnonymizationTypeInterface::alwaysAnonymize()}
  * (secrets, bank accounts) are masked regardless of any exemption.
+ *
+ * Excluded entities ({@see isExcluded()}) get no view at all - for tables whose
+ * content cannot be masked column by column (audit logs with JSON change sets,
+ * session and one-time tokens) and that typically come from vendor packages, so
+ * they cannot be annotated.
  */
 class AnonymizationPolicy
 {
 	/** @var array<class-string, AnonymizationExempt|null> */
 	private array $exemptCache = [];
+
+	/**
+	 * @param list<class-string> $excludedEntities entities (subclasses included) left out
+	 *        of the anonymized schema entirely; unknown classes are ignored, so a list of
+	 *        optional vendor entities is safe
+	 */
+	public function __construct(
+		private readonly array $excludedEntities = [],
+	) {
+	}
 
 	/**
 	 * @param class-string $class entity class the column belongs to
@@ -46,6 +61,22 @@ class AnonymizationPolicy
 
 		// An empty list means every anonymizable type stays readable.
 		return $exempt->keepReadable !== [] && !in_array($type, $exempt->keepReadable, true);
+	}
+
+	/**
+	 * Is the entity left out of the anonymized schema (no view, no description)?
+	 *
+	 * @param class-string $class
+	 */
+	public function isExcluded(string $class): bool
+	{
+		foreach ($this->excludedEntities as $excluded) {
+			if (is_a($class, $excluded, true)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use ADT\DoctrineAnonymization\AnonymizationPolicy;
 use ADT\DoctrineAnonymization\AnonymizationType as T;
 use ADT\DoctrineAnonymization\Tests\Fixtures\Person;
 use ADT\DoctrineAnonymization\Tests\Fixtures\Team;
@@ -65,6 +66,16 @@ class AnonymizationPolicyTest extends BaseTest
 	{
 		$this->assertTrue($this->policy()->isExempt(ChildOfExemptFixture::class));
 	}
+
+	public function testExcludedEntityIncludesSubclassesAndIgnoresUnknownClasses(): void
+	{
+		$policy = new AnonymizationPolicy([Team::class, 'Vendor\\Missing\\Entity']);
+
+		$this->assertTrue($policy->isExcluded(Team::class));
+		$this->assertTrue($policy->isExcluded(ExcludedTeamSubclassFixture::class));
+		$this->assertFalse($policy->isExcluded(Person::class));
+		$this->assertFalse($this->policy()->isExcluded(Team::class));
+	}
 }
 
 #[ADT\DoctrineAnonymization\Attributes\AnonymizationExempt]
@@ -73,5 +84,9 @@ class FullyExemptFixture
 }
 
 class ChildOfExemptFixture extends FullyExemptFixture
+{
+}
+
+class ExcludedTeamSubclassFixture extends Team
 {
 }

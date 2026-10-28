@@ -27,8 +27,13 @@ class SchemaDescriber
 	/** @var array<string, array<string, string>>|null */
 	private ?array $descriptions = null;
 
+	/**
+	 * @param AnonymizationPolicy|null $policy skips entities excluded from the anonymized
+	 *        schema; null describes every entity
+	 */
 	public function __construct(
 		private readonly EntityManagerInterface $em,
+		private readonly ?AnonymizationPolicy $policy = null,
 	) {
 	}
 
@@ -49,8 +54,12 @@ class SchemaDescriber
 				continue;
 			}
 
-			$table = strtolower($metadata->getTableName());
 			$class = $metadata->getReflectionClass()->getName();
+			if ($this->policy?->isExcluded($class)) {
+				continue;
+			}
+
+			$table = strtolower($metadata->getTableName());
 
 			foreach ($metadata->getFieldNames() as $fieldName) {
 				// Embedded fields ("address.street") are not supported yet.

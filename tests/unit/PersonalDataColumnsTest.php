@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use ADT\DoctrineAnonymization\AnonymizationPolicy;
 use ADT\DoctrineAnonymization\PersonalDataColumns;
+use ADT\DoctrineAnonymization\Tests\Fixtures\Team;
 
 class PersonalDataColumnsTest extends BaseTest
 {
@@ -45,5 +47,16 @@ class PersonalDataColumnsTest extends BaseTest
 		$this->assertArrayNotHasKey('city', $columns);       // anonymizable type, kept readable
 		$this->assertArrayNotHasKey('weight', $columns);     // not personal data
 		$this->assertArrayNotHasKey('birth_date', $columns); // masked, but not a direct identifier
+	}
+
+	/**
+	 * An excluded table is not queryable, so its readable team `NAME` no longer
+	 * protects the column name - the masked person name is redacted again.
+	 */
+	public function testExcludedEntityDoesNotKeepColumnNamesReadable(): void
+	{
+		$columns = (new PersonalDataColumns($this->em(), new AnonymizationPolicy([Team::class])))->getDirectIdentifierColumns();
+
+		$this->assertArrayHasKey('name', $columns);
 	}
 }

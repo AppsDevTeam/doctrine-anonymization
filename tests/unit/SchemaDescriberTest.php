@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use ADT\DoctrineAnonymization\AnonymizationPolicy;
 use ADT\DoctrineAnonymization\SchemaDescriber;
+use ADT\DoctrineAnonymization\Tests\Fixtures\Team;
 
 class SchemaDescriberTest extends BaseTest
 {
@@ -50,5 +52,13 @@ class SchemaDescriberTest extends BaseTest
 			'Foreign key referencing table "team".',
 			$descriptions['person']['backup_team_id'],
 		);
+	}
+
+	public function testExcludedEntityIsNotDescribed(): void
+	{
+		$descriptions = (new SchemaDescriber($this->em(), new AnonymizationPolicy([Team::class])))->getColumnDescriptions();
+
+		$this->assertArrayHasKey('person', $descriptions);
+		$this->assertArrayNotHasKey('team', $descriptions);
 	}
 }

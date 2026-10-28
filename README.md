@@ -97,6 +97,26 @@ If a type needs a specific shape of masking (e.g. keep only the year of a date),
 implement `MaskingStrategy` - see `DefaultMaskingStrategy`, which does exactly that
 for `DATE_OF_BIRTH`.
 
+### Excluding whole tables
+
+Some tables cannot be masked column by column and have no business in the
+anonymized schema at all - audit logs with a JSON change set (old and new values of
+every logged entity, names included), sessions and one-time tokens (readable tokens
+mean account takeover). They usually come from vendor packages, so you cannot put
+`#[Anonymize]` on them. List them in the policy instead:
+
+```php
+new AnonymizationPolicy(excludedEntities: [
+    \ADT\DoctrineLoggable\Entity\ChangeLog::class,
+    \ADT\DoctrineAuthenticator\StorageEntity::class,
+]);
+```
+
+An excluded entity (subclasses included) gets no view - an existing one is dropped
+as stale on the next generation - and `SchemaDescriber` (when given the policy) and
+`PersonalDataColumns` skip it. Classes that do not exist are ignored, so a list of
+optional vendor entities is safe.
+
 ## Generating the views
 
 ```neon
