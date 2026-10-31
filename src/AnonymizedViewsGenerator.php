@@ -454,9 +454,13 @@ class AnonymizedViewsGenerator
 		?string $mirrorSchema,
 		array $knownTables,
 	): array {
-		$staleViews = array_values(array_diff(
+		// With lower_case_table_names > 0 information_schema returns lowercased names,
+		// so "l_campaignSet" would be dropped right after being created.
+		$isStale = static fn (string $name): bool => !in_array(strtolower($name), array_map('strtolower', $knownTables), true);
+
+		$staleViews = array_values(array_filter(
 			$target->fetchFirstColumn('SELECT TABLE_NAME FROM information_schema.VIEWS WHERE TABLE_SCHEMA = ?', [$schema]),
-			$knownTables,
+			$isStale,
 		));
 
 		foreach ($staleViews as $staleView) {
@@ -464,12 +468,12 @@ class AnonymizedViewsGenerator
 		}
 
 		if ($mirrorSchema !== null) {
-			$staleMirrors = array_diff(
+			$staleMirrors = array_filter(
 				$target->fetchFirstColumn(
 					"SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND ENGINE = 'FEDERATED'",
 					[$mirrorSchema],
 				),
-				$knownTables,
+				$isStale,
 			);
 			foreach ($staleMirrors as $staleMirror) {
 				$execute(sprintf('DROP TABLE IF EXISTS %s.%s', $this->quoteIdentifier($mirrorSchema), $this->quoteIdentifier((string) $staleMirror)));
