@@ -106,6 +106,31 @@ class SchemaDescriber
 					$map[$table][$columnName] = implode(' ', $parts);
 				}
 			}
+
+			foreach ($metadata->getAssociationNames() as $fieldName) {
+				$joinTable = MetadataHelper::readJoinTable($metadata, $fieldName);
+				$targetClass = $metadata->getAssociationTargetClass($fieldName);
+				if ($joinTable === null || $this->policy?->isExcluded($targetClass)) {
+					continue;
+				}
+
+				try {
+					$targetTable = $this->em->getClassMetadata($targetClass)->getTableName();
+				} catch (\Throwable) {
+					continue;
+				}
+
+				$joinTableName = strtolower($joinTable['name']);
+				foreach ($joinTable['joinColumns'] as $column) {
+					$map[$joinTableName][$column] = sprintf('Foreign key referencing table "%s".', $metadata->getTableName());
+				}
+
+				$description = $this->readDescription($class, $fieldName);
+				foreach ($joinTable['inverseJoinColumns'] as $column) {
+					$hint = sprintf('Foreign key referencing table "%s".', $targetTable);
+					$map[$joinTableName][$column] = $description !== null ? $description . ' ' . $hint : $hint;
+				}
+			}
 		}
 
 		return $this->descriptions = $map;

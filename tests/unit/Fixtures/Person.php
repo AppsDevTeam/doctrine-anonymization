@@ -59,4 +59,20 @@ class Person
 	#[ORM\ManyToOne(targetEntity: Team::class)]
 	#[ORM\JoinColumn(name: 'backup_team_id', referencedColumnName: 'id')]
 	public ?Team $backupTeam = null;
+
+	/** Many-to-many - the join table has no entity of its own. */
+	#[ORM\ManyToMany(targetEntity: Team::class)]
+	#[ORM\JoinTable(name: 'person_x_team')]
+	#[ORM\JoinColumn(name: 'person_id', referencedColumnName: 'id')]
+	#[ORM\InverseJoinColumn(name: 'team_id', referencedColumnName: 'id')]
+	#[Description('Teams the person helps out in.')]
+	public iterable $helpedTeams = [];
+
+	/** References to the targets are personal data here, so they get masked. */
+	#[ORM\ManyToMany(targetEntity: Person::class)]
+	#[ORM\JoinTable(name: 'person_x_contact')]
+	#[ORM\JoinColumn(name: 'person_id', referencedColumnName: 'id')]
+	#[ORM\InverseJoinColumn(name: 'contact_id', referencedColumnName: 'id')]
+	#[Anonymize(AnonymizationType::SECRET)]
+	public iterable $contacts = [];
 }

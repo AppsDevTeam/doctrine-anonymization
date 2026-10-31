@@ -63,4 +63,26 @@ class AnonymizedViewsGeneratorTest extends BaseTest
 		$this->assertArrayHasKey('person', $map);
 		$this->assertArrayNotHasKey('team', $map);
 	}
+
+	/** Join tables have no entity, without this they silently had no view. */
+	public function testManyToManyJoinTableGetsAView(): void
+	{
+		$map = $this->tableMap();
+
+		$this->assertArrayHasKey('person_x_team', $map);
+		$this->assertSame([], $map['person_x_team']);
+	}
+
+	public function testAnonymizedManyToManyMasksTheTargetReferences(): void
+	{
+		$this->assertSame(['contact_id' => AnonymizationType::SECRET], $this->tableMap()['person_x_contact']);
+	}
+
+	public function testJoinTableToAnExcludedEntityHasNoView(): void
+	{
+		$map = (new AnonymizedViewsGenerator($this->em(), new AnonymizationPolicy([Team::class])))->buildTableMap();
+
+		$this->assertArrayNotHasKey('person_x_team', $map);
+		$this->assertArrayHasKey('person_x_contact', $map);
+	}
 }

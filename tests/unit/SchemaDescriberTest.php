@@ -61,4 +61,22 @@ class SchemaDescriberTest extends BaseTest
 		$this->assertArrayHasKey('person', $descriptions);
 		$this->assertArrayNotHasKey('team', $descriptions);
 	}
+
+	public function testJoinTableColumnsGetTargetTableHints(): void
+	{
+		$descriptions = $this->describer()->getColumnDescriptions();
+
+		$this->assertSame('Foreign key referencing table "person".', $descriptions['person_x_team']['person_id']);
+		$this->assertSame(
+			'Teams the person helps out in. Foreign key referencing table "team".',
+			$descriptions['person_x_team']['team_id'],
+		);
+	}
+
+	public function testJoinTableToAnExcludedEntityIsNotDescribed(): void
+	{
+		$descriptions = (new SchemaDescriber($this->em(), new AnonymizationPolicy([Team::class])))->getColumnDescriptions();
+
+		$this->assertArrayNotHasKey('person_x_team', $descriptions);
+	}
 }

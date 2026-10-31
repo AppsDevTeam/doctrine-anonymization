@@ -117,6 +117,14 @@ as stale on the next generation - and `SchemaDescriber` (when given the policy) 
 `PersonalDataColumns` skip it. Classes that do not exist are ignored, so a list of
 optional vendor entities is safe.
 
+### Many-to-many join tables
+
+A join table has no entity of its own; the owning side of the association brings it
+in, so it gets a view too, columns passing through. `#[Anonymize]` on the collection
+masks the references to the target (the inverse join columns) when the relation
+itself is personal data. A relation to an excluded entity gets no view, and
+`SchemaDescriber` describes the join columns as foreign keys to both tables.
+
 ## Generating the views
 
 ```neon

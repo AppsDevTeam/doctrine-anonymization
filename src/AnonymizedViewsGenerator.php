@@ -15,7 +15,7 @@ use Throwable;
 /**
  * Generates database views exposing the data with personal columns masked.
  *
- * For every entity table a view is created in a separate schema (by default
+ * For every entity table (and many-to-many join table) a view is created in a separate schema (by default
  * `<dbname>_anon`):
  *
  *  - columns without {@see Attributes\Anonymize}, and those the policy keeps
@@ -244,6 +244,27 @@ class AnonymizedViewsGenerator
 				}
 
 				$tables[$table][strtolower($metadata->getSingleAssociationJoinColumnName($fieldName))] = $type;
+			}
+
+			// Many-to-many join tables have no entity of their own, the owning side
+			// brings them in. A relation to an excluded entity gets no view.
+			foreach ($metadata->getAssociationNames() as $fieldName) {
+				$joinTable = MetadataHelper::readJoinTable($metadata, $fieldName);
+				if ($joinTable === null || $this->policy->isExcluded($metadata->getAssociationTargetClass($fieldName))) {
+					continue;
+				}
+
+				$tables[$joinTable['name']] ??= [];
+
+				// #[Anonymize] on the collection masks the references to the target.
+				$type = MetadataHelper::readAnonymizeType($class, $fieldName);
+				if ($type === null || !$this->policy->shouldAnonymize($class, $type)) {
+					continue;
+				}
+
+				foreach ($joinTable['inverseJoinColumns'] as $column) {
+					$tables[$joinTable['name']][strtolower($column)] = $type;
+				}
 			}
 		}
 
