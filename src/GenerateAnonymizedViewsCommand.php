@@ -16,6 +16,11 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Run it on every deploy right after migrations - the column list of a view is fixed
  * at generation time, so new columns only appear after regeneration.
  *
+ * The default salt of {@see GeneratorOptions} is public: with it anyone who reads the views
+ * can hash a known name or birth number and look it up. Give the project's secret salt by
+ * {@see setSalt()} (e.g. a DI setup from env) - once set, the command refuses to run without
+ * a non-empty one. `--salt` still wins (regenerating with another salt by hand).
+ *
  * If your project needs extra steps around the generation, skip this command and call
  * {@see AnonymizedViewsGenerator} from your own command instead.
  */
@@ -25,9 +30,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class GenerateAnonymizedViewsCommand extends Command
 {
+	/** null = the default salt of GeneratorOptions */
+	private ?string $salt = null;
+
 	public function __construct(private readonly AnonymizedViewsGenerator $generator)
 	{
 		parent::__construct();
+	}
+
+	/** The secret salt of the project; an empty one (env not set) stops the command */
+	public function setSalt(string $salt): void
+	{
+		$this->salt = $salt;
 	}
 
 	protected function configure(): void
@@ -50,7 +64,12 @@ class GenerateAnonymizedViewsCommand extends Command
 
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
-		$salt = $input->getOption('salt');
+		$salt = $input->getOption('salt') ?? $this->salt;
+		if ($salt !== null && trim((string) $salt) === '') {
+			$output->writeln('<error>The salt for hashing personal data is empty - set the secret salt of the project (setSalt(), --salt).</error>');
+
+			return Command::FAILURE;
+		}
 
 		$options = new GeneratorOptions(
 			schema: $input->getOption('schema') ?: null,

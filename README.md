@@ -146,6 +146,20 @@ php bin/console anonymization:generate-views --salt=... --schema=myapp_anon
 php bin/console anonymization:generate-views --mask --dry-run
 ```
 
+The default salt is public - anyone reading the views could hash a known name and look it
+up. Give the command the project's secret salt instead of `--salt` on every run:
+
+```neon
+services:
+	anonymizationGenerateViews:
+		factory: ADT\DoctrineAnonymization\GenerateAnonymizedViewsCommand
+		setup:
+			- setSalt(%env.ANONYMIZATION_SALT_SECRET%)
+```
+
+Once set, an empty salt (the env variable missing) stops the command instead of falling
+back to the default; `--salt` on the command line still wins.
+
 **Run it on every deploy, right after migrations.** The column list of each view is
 fixed at generation time, so a newly added source column is simply absent from the
 view until you regenerate - fail-closed, but also means annotating alone changes
